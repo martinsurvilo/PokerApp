@@ -55,6 +55,7 @@ class PokerHand:
         return self.state
 
     def action(self, action, amount = 0):
+        print(self.state.actor_index + 1)
         if not self.state:
             return {"error": "Hand not started"}
         #Grammar error if a player calls 1 chip it says 1 chips
@@ -104,7 +105,8 @@ class PokerHand:
         if self.state.can_pull_chips():
             self.log += f"Hand {self.id} ended\n"
             self.log += f"Final pot was {self.state.total_pot_amount}\n"
-            self.state.pull_chips()
+            while self.state.can_pull_chips():
+                self.state.pull_chips()
      
     def is_action_allowed(self, action, amount):
         if self.state.status == True:
@@ -127,6 +129,7 @@ class PokerHand:
         return False
     
     def get_status(self):
+        print(f"DEBUG get_status: actor_index={self.state.actor_index}, stacks={self.state.stacks}, status={self.state.status}")
         if not self.state or not self.state.status:
             return {"log": self.log}
         else:

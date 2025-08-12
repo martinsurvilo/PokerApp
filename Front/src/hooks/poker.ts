@@ -1,5 +1,14 @@
 import { useState } from 'react';
 
+interface GameStateResponse {
+  log: string;
+  game_started?: boolean;
+  call_amount?: number;
+  bet_size?: number;
+  previous_bet?: number;
+  current_stack?: number;
+}
+
 export function usePokerGame() {
   const [inputValue, setInputValue] = useState("10000"); 
   const [stacks, setStacks] = useState(10000);
@@ -11,20 +20,44 @@ export function usePokerGame() {
   const [previousBet, setPreviousBet] = useState(0);
   const [currentBet, setCurrentBet] = useState(0);
 
-  function updateGameState(data) {
+  function updateGameState(data: GameStateResponse) {
     setLog(data.log);
     setGameStarted(data.game_started ?? false);
-    setCallAmount(data.call_amount ?? 0);
-    setBetSize(data.bet_size ?? 0);
-    setPreviousBet(data.previous_bet ?? 0);
-    setMaxBet(data.current_stack + data.previous_bet);
-    setCurrentBet(Math.min(
-      Math.max(
-        (data.call_amount * 2) + data.previous_bet, 
-        data.bet_size
-      ), 
-      data.current_stack
-    ));
+
+    const callAmount = data.call_amount ?? 0;
+    const betSize = data.bet_size ?? 0;
+    const previousBet = data.previous_bet ?? 0;
+    const currentStack = data.current_stack ?? 0;
+    setCallAmount(callAmount);
+    setBetSize(betSize);
+    setPreviousBet(previousBet);
+    setMaxBet(currentStack + previousBet);
+
+    const minBet = Math.max(callAmount * 2 + previousBet, betSize);
+    setCurrentBet(Math.min(minBet, currentStack));
+  }
+
+  async function sendAction(action: string, amount?: number) {
+    const response = await fetch("http://127.0.0.1:8000/action", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ action, amount }),
+    });
+    if (!response.ok) throw new Error("Request failed");
+
+    const data = await response.json();
+    updateGameState(data);
+  }
+
+  async function startHand() {
+    const response = await fetch("http://127.0.0.1:8000/start-hand", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({stakes: stacks}),
+    });
+
+    const data = await response.json();
+    updateGameState(data);
   }
 
   function incrementBet(step: number) {
@@ -46,7 +79,7 @@ export function usePokerGame() {
 
     switch (action) {
       case "fold":
-        return true;
+        return callAmount > 0;
 
       case "allin":
         return true;
@@ -68,19 +101,17 @@ export function usePokerGame() {
     }
   }
 
-
   return {
     inputValue, setInputValue,
     stacks, setStacks,
     log,
     gameStarted,
-    callAmount,
     betSize,
-    maxBet,
     previousBet,
     currentBet,
-    updateGameState,
     incrementBet, decrementBet,
     isActionAllowed,
+    sendAction,
+    startHand,
   }
 }
