@@ -1,3 +1,3 @@
 To run:
-docker-compose up --build
+dockercompose up
 launch http://localhost:3000/
