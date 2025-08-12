@@ -4,7 +4,8 @@ import poker
 from dotenv import load_dotenv
 import os
 import psycopg2
-from repository import HandRepo
+from repository import HandData, HandRepo
+from typing import List
 
 load_dotenv()
 
@@ -69,6 +70,10 @@ def action(
         del games[hand_id]
         
     return {"hand_id": game.id, **game.get_status()}
+
+@app.get("/hands", response_model=List[HandData])
+def get_hands():
+    return repo.get_all_hands()
 
 
 

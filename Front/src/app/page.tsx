@@ -1,11 +1,9 @@
 'use client';
 import React, { useState } from 'react';
-import {Button} from '@/components/ui/button';
-import {Input} from '@/components/ui/input';
-import {ScrollArea} from '@/components/ui/scroll-area';
 import { usePokerGame } from '@/hooks/poker';
 import { ActionBar } from '@/components/poker/actionBar';
 import { GameControls } from '@/components/poker/gameControls';
+import { HandsHistory, HandLog } from '@/components/poker/logs';
 
 export default function Page() {
   const {
@@ -34,15 +32,8 @@ export default function Page() {
   }
 
   return (
-    <div style={{ display: 'flex', height: '100vh' }}>
-      <div style={{ 
-        flex: 3, 
-        borderRight: '1px solid #ccc', 
-        padding: '1rem', 
-        display: 'flex',
-        flexDirection: 'column', 
-        height: '100vh' 
-      }}>
+    <div className="flex h-screen">
+      <div className="flex flex-col flex-3 p-4 h-screen overflow-hidden">
         <GameControls
           inputValue={inputValue}
           onInputChange={handleInputChange}
@@ -51,10 +42,8 @@ export default function Page() {
           gameStarted={gameStarted}
         />
 
-        <div className="mx-auto my-5 text-gray-500 flex-grow pb-20">
-          <ScrollArea>
-            <pre>{log}</pre>
-          </ScrollArea>
+        <div className="flex-1 my-4 ml-30 overflow-hidden">
+          <HandLog log={log} />
         </div>
 
         <ActionBar
@@ -70,9 +59,8 @@ export default function Page() {
 
       </div>
 
-      <div style={{ flex: 2, padding: '1rem' }}>
-        
-        Right side
+      <div className="flex-2 p-4 mr-4 h-screen overflow-hidden">
+        <HandsHistory />
       </div>
     </div>
   )

@@ -36,7 +36,7 @@ export function usePokerGame() {
     setPreviousBet(previousBet);
     setMaxBet(currentStack + previousBet);
 
-    const minBet = Math.max(callAmount * 2 + previousBet, betSize);
+    const minBet = Math.max(callAmount * 2 + previousBet, betSize * 2);
     setCurrentBet(Math.min(minBet, currentStack));
   }
 
