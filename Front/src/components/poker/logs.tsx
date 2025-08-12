@@ -9,9 +9,9 @@ export function HandsHistory() {
   if (!hands.length) return <p>Loading...</p>;
 
   return (
-    <div className="mx-auto my-5 text-gray-500 flex-grow pb-20">
+    <div className="mx-auto my-5 text-gray-500 pb-20 flex flex-col h-full max-h-[100vh]">
       <h1 className="text-4xl pt-9">Hand History</h1>
-      <ScrollArea className="h-200 w-full pt-4">
+      <ScrollArea className="flex-1 w-full pt-4 overflow-auto whitespace-pre-wrap break-all">
         {hands.map((hand: any) => (
           <Card key={hand.id} className="mb-2 bg-blue-200">
             <CardContent>
@@ -31,7 +31,7 @@ export function HandsHistory() {
                   .join(", ")}
               </div>
 
-              <div className="whitespace-pre-wrap break-all">Actions:{" "}{hand.actions.split('\n').join(', ')}</div>
+              <div>Actions:{" "}{hand.actions.split('\n').join(', ')}</div>
               
               <div>
                 Winnings:{" "}
@@ -53,9 +53,9 @@ interface HandLogProps {
 
 export function HandLog({ log }: HandLogProps) {
   return(
-    <div className="mx-auto my-5 text-gray-500 flex-grow pb-20">
-      <h1 className="text-4xl text-gray-500">Playing field log</h1>
-      <ScrollArea className="h-200 w-full pt-4">
+    <div className="mx-auto my-5 text-gray-500 pb-20 flex flex-col w-full max-w-[60vh] h-full max-h-[90vh]">
+      <h1 className="text-4xl">Playing field log</h1>
+      <ScrollArea className="pt-4 overflow-auto">
         <pre>{log}</pre>
       </ScrollArea>
     </div>

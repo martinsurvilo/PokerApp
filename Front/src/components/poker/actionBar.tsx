@@ -24,7 +24,7 @@ export function ActionBar({
 }: ActionBarProps) {
   if (!gameStarted) return null;
   return (
-    <footer className='sticky bottom-0 p-4 flex justify-center gap-4 bg-white'>
+    <footer className='sticky bottom-0 flex justify-center gap-4 bg-white'>
       <Button className='bg-blue-900'
         disabled={!isActionAllowed("fold")}
         onClick={() => sendAction("fold")}

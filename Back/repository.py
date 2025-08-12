@@ -1,6 +1,6 @@
 import psycopg2
 import psycopg2.extras
-import uuid
+import ulid
 from dataclasses import dataclass
 from typing import Optional, List
 import json
@@ -23,7 +23,7 @@ class HandRepo:
         with self.conn.cursor() as cur:
             cur.execute("""
             CREATE TABLE IF NOT EXISTS hands (
-                id UUID PRIMARY KEY,
+                id CHAR(26) PRIMARY KEY,
                 stacks INT,
                 dealer INT,
                 cards JSONB,
@@ -54,7 +54,7 @@ class HandRepo:
             ))
             self.conn.commit()
             
-    def get_hand(self, hand_id: uuid.UUID) -> Optional[HandData]:
+    def get_hand(self, hand_id: ulid.ulid) -> Optional[HandData]:
         with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
             cur.execute("SELECT * FROM hands WHERE id = %s", (hand_id,))
             row = cur.fetchone()

@@ -1,11 +1,11 @@
 from pokerkit import Automation, NoLimitTexasHoldem
 from repository import HandData
-import uuid
+import ulid
 import re
 
 class PokerHand:
     def __init__(self):
-        self.id = str(uuid.uuid4())
+        self.id = str(ulid.new())
         self.state = None
         self.game = None
         self.log = ""
