@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${PGUSER}
+      POSTGRES_PASSWORD: ${PGPASSWORD}
+      POSTGRES_DB: ${PGDATABASE}
+    ports:
+      - "${PGPORT}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build: ./Back
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+    environment:
+      PGHOST: db
+      PGUSER: ${PGUSER}
+      PGPASSWORD: ${PGPASSWORD}
+      PGDATABASE: ${PGDATABASE}
+      PGPORT: 5432 
+  frontend:
+    build: ./Front
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
