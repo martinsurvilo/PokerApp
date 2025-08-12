@@ -51,7 +51,7 @@ export default function Page() {
           gameStarted={gameStarted}
         />
 
-        <div className="mx-auto my-5 text-gray-500 flex-grow">
+        <div className="mx-auto my-5 text-gray-500 flex-grow pb-20">
           <ScrollArea>
             <pre>{log}</pre>
           </ScrollArea>

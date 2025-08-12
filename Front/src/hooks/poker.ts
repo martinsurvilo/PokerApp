@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 interface GameStateResponse {
+  hand_id: string
   log: string;
   game_started?: boolean;
   call_amount?: number;
@@ -19,8 +20,10 @@ export function usePokerGame() {
   const [maxBet, setMaxBet] = useState(0);
   const [previousBet, setPreviousBet] = useState(0);
   const [currentBet, setCurrentBet] = useState(0);
+  const [hand_id, setHandId] = useState("");
 
   function updateGameState(data: GameStateResponse) {
+    setHandId(data.hand_id);
     setLog(data.log);
     setGameStarted(data.game_started ?? false);
 
@@ -41,7 +44,7 @@ export function usePokerGame() {
     const response = await fetch("http://127.0.0.1:8000/action", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ action, amount }),
+      body: JSON.stringify({ hand_id, action, amount }),
     });
     if (!response.ok) throw new Error("Request failed");
 

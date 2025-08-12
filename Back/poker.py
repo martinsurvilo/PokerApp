@@ -1,5 +1,7 @@
 from pokerkit import Automation, NoLimitTexasHoldem
+from repository import HandData
 import uuid
+import re
 
 class PokerHand:
     def __init__(self):
@@ -13,11 +15,11 @@ class PokerHand:
     
     #Choosing dealer is automated by pokerkit so dealer is always player 6, 
     # value given to function here is only used to log the hand
-    def start_hand(self, stakes = 10000, bblind = 40, player_count = 6, dealer = 5):
-        self.stakes = stakes
-        self.bblind = bblind
-        self.player_count = player_count
-        self.dealer = dealer
+    def start_hand(self, starting_stack = 10000):
+        self.starting_stack = starting_stack
+        self.bblind = 40
+        self.player_count = 6
+        self.dealer = 5
         
         self.game = NoLimitTexasHoldem(
             (
@@ -34,28 +36,27 @@ class PokerHand:
             ),
             False,
             0,
-            (int(bblind / 2), bblind),
-            bblind,
+            (int(self.bblind / 2), self.bblind),
+            self.bblind,
         )
 
         self.state = self.game(
-            stakes,
-            player_count,
+            starting_stack,
+            self.player_count,
         )
         
         for index, hand in enumerate(self.state.hole_cards):
             self.log += f"Player {index + 1} is dealt {''.join(card.rank + card.suit for card in hand)}\n"
             
         self.log += "---\n"
-        self.log += f"Player {((dealer) % self.state.player_count) + 1} is the dealer\n"
-        self.log += f"Player {((dealer + 1) % self.state.player_count) + 1} posts small blind - {int(bblind / 2)} chips\n"
-        self.log += f"Player {((dealer + 2) % self.state.player_count) + 1} posts big blind - {bblind} chips\n"
+        self.log += f"Player {((self.dealer) % self.state.player_count) + 1} is the dealer\n"
+        self.log += f"Player {((self.dealer + 1) % self.state.player_count) + 1} posts small blind - {int(self.bblind / 2)} chips\n"
+        self.log += f"Player {((self.dealer + 2) % self.state.player_count) + 1} posts big blind - {self.bblind} chips\n"
         self.log += "---\n"
 
         return self.state
 
     def action(self, action, amount = 0):
-        print(self.state.actor_index + 1)
         if not self.state:
             return {"error": "Hand not started"}
         #Grammar error if a player calls 1 chip it says 1 chips
@@ -84,7 +85,6 @@ class PokerHand:
                 self.state.complete_bet_or_raise_to(amount)
             
         self.deal_board_if_needed()
-        self.is_game_over()
         return self.state
     
     def deal_board_if_needed(self):
@@ -107,6 +107,9 @@ class PokerHand:
             self.log += f"Final pot was {self.state.total_pot_amount}\n"
             while self.state.can_pull_chips():
                 self.state.pull_chips()
+            return True
+        else:
+            return False
      
     def is_action_allowed(self, action, amount):
         if self.state.status == True:
@@ -129,7 +132,7 @@ class PokerHand:
         return False
     
     def get_status(self):
-        print(f"DEBUG get_status: actor_index={self.state.actor_index}, stacks={self.state.stacks}, status={self.state.status}")
+        #print(f"DEBUG get_status: actor_index={self.state.actor_index}, stacks={self.state.stacks}, status={self.state.status}")
         if not self.state or not self.state.status:
             return {"log": self.log}
         else:
@@ -142,6 +145,76 @@ class PokerHand:
                 "previous_bet": self.state.bets[self.state.actor_index]
             }
             
+    def to_hand_data(self) -> HandData:
+        hole_cards, player_actions = self.read_log()
+        return HandData(
+            id=self.id,
+            stacks=self.starting_stack,
+            dealer=self.dealer,
+            cards=hole_cards,
+            actions=player_actions,
+            winnings=self.get_winnings_dict()
+        )
+        
+    def read_log(self):
+        #if line has "is dealt" then "{part 1} is dealt {part 2}" -> hole_cards.append('{part 1}': '{part 2}')
+        
+        #if line has "folds" then self.log += 'f:'
+        #if line has "checks" then self.log += 'x:'
+        #if line has "calls" then self.log += 'c:'
+        #if line has "bets" then "... bets {x} chips" self.log += 'b{x}:'
+        #if line has "raises" then "... raises {x} chips" self.log += 'r{x}:'
+        #if line has "goes allin" then self.log += 'allin:'
+        #if line has "cards dealt" then self.log[:-1] += ' Cards '
+        
+        hole_cards = {}
+        player_actions = ""
+        for line in self.log.splitlines():            
+            if "folds" in line:
+                player_actions += "f:"
+                continue
+            if "checks" in line:
+                player_actions += "x:"
+                continue
+            if "calls" in line:
+                player_actions += "c:"
+                continue
+            if "goes allin" in line:
+                player_actions += "allin:"
+                continue
+            
+            m = re.match(r"Player (\d+) is dealt (.+)", line)
+            if m:
+                player = f"Player {m.group(1)}"
+                hole_cards[player] = m.group(2)
+                continue
+            
+            m = re.match(r".*bets (\d+) chips", line)
+            if m:
+                player_actions += f"b{m.group(1)}:"
+                continue
+            
+            m = re.match(r".*raises to (\d+) chips", line)
+            if m:
+                player_actions += f"r{m.group(1)}:"
+                continue
+            
+            m = re.match(r"(Flop|Turn|River) cards dealt: (.+)", line)
+            if m:
+                player_actions = player_actions[:-1]
+                player_actions += f" {m.group(2)} "
+                continue
+            
+        if player_actions.endswith(':'):
+            player_actions = player_actions[:-1]
+            
+        return hole_cards, player_actions
+       
+    def get_winnings_dict(self):
+        return {
+            f"Player {i+1}": f"{end - start:+d}"
+            for i, (end, start) in enumerate(zip(self.state.stacks, self.state.starting_stacks))
+        }
             
 def main():
     hand = PokerHand()

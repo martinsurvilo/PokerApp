@@ -1,8 +1,24 @@
 from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 import poker
+from dotenv import load_dotenv
+import os
+import psycopg2
+from repository import HandRepo
+
+load_dotenv()
+
+conn = psycopg2.connect(
+    host=os.getenv("PGHOST"),
+    user=os.getenv("PGUSER"),
+    password=os.getenv("PGPASSWORD"),
+    dbname=os.getenv("PGDATABASE"),
+    port=os.getenv("PGPORT")
+)
 
 app = FastAPI()
+repo = HandRepo(conn)
+repo.create_table()
 
 origins = [
     "http://localhost:3000",
@@ -17,24 +33,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-game = None
+games = {}
 
 @app.post("/start-hand")
 def start_hand(stakes: int = Body(..., embed=True)):
     global game
     game = poker.PokerHand()
     game.start_hand(stakes)
-    return game.get_status()
+    games[game.id] = game
+    return {"hand_id": game.id, **game.get_status()}
 
 @app.post("/action")
 def action(
+    hand_id: str = Body(..., embed=True),
     action: str = Body(..., embed=True),
     amount: int | None = Body(None, embed=True)
 ):
-    global game
-    
-    if game is None:
-        raise HTTPException(status_code=400, detail="Game has not been started yet. Please start a hand first.")
+    if hand_id not in games:
+        raise HTTPException(status_code=404, detail="Hand not found")
+    game = games[hand_id]
     
     if not game.is_action_allowed(action, amount):
         raise HTTPException(
@@ -46,7 +63,12 @@ def action(
         game.action(action, amount)
     else:
         game.action(action)
-    return game.get_status()
+        
+    if game.is_game_over():
+        repo.save_hand(game.to_hand_data())
+        del games[hand_id]
+        
+    return {"hand_id": game.id, **game.get_status()}
 
 
 
