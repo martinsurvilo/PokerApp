@@ -2,30 +2,23 @@ services:
   db:
     image: postgres:15
     environment:
-      POSTGRES_USER: ${PGUSER}
-      POSTGRES_PASSWORD: ${PGPASSWORD}
-      POSTGRES_DB: ${PGDATABASE}
+      POSTGRES_USER: dummyuser
+      POSTGRES_PASSWORD: dummypass
+      POSTGRES_DB: dummydb
     ports:
-      - "${PGPORT}:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+      - "5432:5432"
 
   backend:
     build: ./Back
-    depends_on:
-      - db
-    ports:
-      - "8000:8000"
     environment:
       PGHOST: db
-      PGUSER: ${PGUSER}
-      PGPASSWORD: ${PGPASSWORD}
-      PGDATABASE: ${PGDATABASE}
-      PGPORT: 5432 
+      PGUSER: dummyuser
+      PGPASSWORD: dummypass
+      PGDATABASE: dummydb
+      PGPORT: 5432
+    ports:
+      - "8000:8000"
   frontend:
     build: ./Front
     ports:
       - "3000:3000"
-
-volumes:
-  pgdata:
